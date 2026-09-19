@@ -2,6 +2,12 @@
 
 ## Current specification — 2026-09-19
 
+**Latest copy correction (round 3):** Home about is now a brief crypto-style project introduction, NOT a long description of mechanics. This supersedes the earlier request for a longer home explanation. No changes to features, rewards, wallet behavior, or animation.
+
+User request (verbatim): "Edit deskripsi home itu terlalu panjang, dan terlalu jelasin hal gak perlu, yg gue butuh tuh kata kata deskripsi aja buat projek ini apa bukan jelasin semua bro, Seperti about agent miner is Autounmous agent mining bla bla bla gitu paham gak ? Deskripsi about projek yg biasa di pake crypto, itu aja"
+
+Implemented 2026-09-19: replaced both explanatory paragraphs with: "Agent Miner is an autonomous mining ecosystem on Solana. Independent agents bring its underground world to life, with GLDX rewards for eligible token holders." Existing headline, tagline, links and all functionality unchanged.
+
 **Latest user-approved update (round 2) supersedes prior claim/Stock.fun notes:** platform is Stonk.fun, canonical website https://www.stonkfun.xyz. GLDX payouts are external automatic distributions, never an Agent Miner claim operation. Wallet and holder access stay simulated. Reward screen shows empty receipt records with unknown totals until authentic on-chain receipt ingestion is requested. Added immutable decision replay and continuous miner motion; verification below.
 
 This document supersedes source-repository requirements in `REPO_HISTORY.md`. The user owns Digmine and requested continuation, not a redesign. Imported source main commit: `a9a6640ac3a3488ab64176805487c926098587ef` from https://github.com/lasvegasworld18-tech/Digmine.
