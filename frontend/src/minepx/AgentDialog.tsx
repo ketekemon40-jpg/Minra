@@ -1,0 +1,21 @@
+import {useState,useEffect} from 'react';
+import {Pickaxe,Check,Compass,Mountain,Shield,Truck,ArrowRight,LoaderCircle} from 'lucide-react';
+import {Dialog,DialogContent,DialogTitle,DialogDescription} from '../components/ui/dialog';
+import {Button} from '../components/ui/button';
+import {Avatar} from './Avatar';
+import {ensureSession,request} from './api';
+import {Agent} from './types';
+import {toast} from 'sonner';
+import {useWallet,shortAddress} from './WalletContext';
+const options=[{id:'balanced',preference:'balanced',label:'Wayfinder',description:'A measured approach to deeper seams.',icon:Compass},{id:'prospector',preference:'deep',label:'Deep Prospector',description:'Pursue rich veins at greater risk.',icon:Mountain},{id:'guardian',preference:'careful',label:'Steady Hand',description:'Protect your equipment through steady runs.',icon:Shield},{id:'hauler',preference:'balanced',label:'Freight Runner',description:'Keep ore moving to the refinery.',icon:Truck}];
+export const AgentDialog=({open,onClose,onCreated}:{open:boolean;onClose:()=>void;onCreated:(a:Agent)=>void})=>{
+ const [name,setName]=useState(''),[avatar,setAvatar]=useState('brass'),[strategy,setStrategy]=useState('balanced'),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const {wallet}=useWallet();
+ useEffect(()=>{if(open){setName('');setAvatar('brass');setStrategy('balanced');setError('');}},[open,wallet?.wallet_id]);
+ const submit=async(e:React.FormEvent)=>{e.preventDefault();setError('');setBusy(true);try{await ensureSession();const a=await request<Agent>('/agent',{method:'POST',body:JSON.stringify({name:name.trim(),avatar,preference:options.find(p=>p.id===strategy)?.preference,strategy_preset:strategy})});onCreated(a);onClose();toast.success(`${a.name} has arrived at basecamp.`);}catch(e){setError((e as Error).message);}finally{setBusy(false);}};
+ return <Dialog open={open} onOpenChange={v=>{if(!v&&!busy)onClose();}}><DialogContent className="mine-dialog" data-testid="create-agent-dialog"><div className="dialog-emblem"><Pickaxe size={24}/></div><DialogTitle data-testid="create-agent-title">Create your agent.</DialogTitle><DialogDescription data-testid="create-agent-description">Your expedition begins at Brass Hollow.</DialogDescription>
+ <form onSubmit={submit}><label className="field-label" htmlFor="agent-name" data-testid="agent-name-label">AGENT NAME <span>{name.length}/24</span></label><input data-testid="agent-name-input" id="agent-name" autoComplete="off" placeholder="Agent name" title="Use 2–24 letters, numbers, spaces, hyphens, or underscores." value={name} minLength={2} maxLength={24} pattern={'[A-Za-z0-9 _\\-]+'} required onChange={e=>setName(e.target.value)}/><div className="field-label" data-testid="avatar-label">CHOOSE YOUR MINER</div>
+ <div className="avatar-options">{['brass','sage','copper','ice'].map(a=><button type="button" className={avatar===a?'selected':''} key={a} data-testid={`avatar-option-${a}`} onClick={()=>setAvatar(a)} aria-pressed={avatar===a}><Avatar avatar={a} size={65}/><span>{a}</span>{avatar===a&&<Check size={12}/>}</button>)}</div>
+ <div className="field-label" data-testid="preference-label">STARTING STRATEGY <span>EDITABLE PLAYBOOK</span></div><div className="preference-options create-strategy-options">{options.map(p=><button type="button" key={p.id} data-testid={`create-preset-${p.id}`} onClick={()=>setStrategy(p.id)} className={strategy===p.id?'selected':''} aria-pressed={strategy===p.id}><p.icon size={18}/><span><b>{p.label}</b><small>{p.description}</small></span><i>{strategy===p.id&&<Check size={12}/>}</i></button>)}</div>
+ <p className="access-note" data-testid="agent-access-note">{wallet?`Bound to ${shortAddress(wallet.address)}. One agent per wallet.`:'Connect your wallet to create an agent.'}</p>{error&&<p role="alert" className="form-error" data-testid="create-agent-error">{error}</p>}<Button className="gold-button full-width" data-testid="create-agent-submit" type="submit" disabled={busy||name.trim().length<2||!wallet?.eligible}>{busy?<LoaderCircle className="spin"/>:<Pickaxe size={16}/>} {busy?'Preparing your miner…':'Create agent'}{!busy&&<ArrowRight size={16}/>}</Button></form></DialogContent></Dialog>;
+};

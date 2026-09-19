@@ -1,0 +1,8 @@
+import {Users,ArrowUpRight,Pickaxe} from 'lucide-react';
+import {useState} from 'react';
+import {Agent,stageNames} from './types';
+import {Avatar} from './Avatar';
+export const Crew=({agents,onSelect}:{agents:Agent[];onSelect:(a:Agent)=>void})=>{
+ const [expanded,setExpanded]=useState(false);
+ return <section className="crew-section" data-testid="crew-roster"><div className="panel-heading"><div className="section-title"><Users size={16}/><h2 data-testid="crew-heading">On the Shift</h2><span className="count-badge" data-testid="crew-count">{agents.length}</span></div><Pickaxe size={14}/></div><div className={`crew-grid ${expanded?'expanded':''}`}>{agents.slice(0,expanded?agents.length:8).map(a=><button data-testid={`crew-agent-${a.id}`} className="crew-member" key={a.id} onClick={()=>onSelect(a)}><div className={`crew-avatar avatar-${a.avatar}`}><Avatar avatar={a.avatar} size={43}/></div><div><div className="crew-name" data-testid={`crew-name-${a.id}`}>{a.name}<ArrowUpRight size={12}/></div><span className="bot-tag" data-testid={`crew-type-${a.id}`}>AGENT</span><small className={`stage-${a.stage}`} data-testid={`crew-stage-${a.id}`}>{stageNames[a.stage]}</small></div></button>)}</div>{agents.length>8&&<button className="text-button journal-more" data-testid="crew-view-all" onClick={()=>setExpanded(v=>!v)}>{expanded?'Show less':`View all ${agents.length} agents`}<ArrowUpRight size={12}/></button>}<p className="crew-note" data-testid="crew-resident-note">Brass Hollow is home to resident agents and wallet-owned miners.</p></section>;
+};
