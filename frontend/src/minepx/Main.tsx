@@ -20,6 +20,7 @@ import StrategyPage from './StrategyPage';
 import ContestPage from './ContestPage';
 import ReplayPage from './ReplayPage';
 import {HomeAbout} from './HomeAbout';
+import {DistributionMetric} from './DistributionMetric';
 import './Strategy.css';
 import './Wallet.css';
 const nav=[{to:'/',label:'The Mine',icon:Compass,id:'mine'},{to:'/agent',label:'My Agent',icon:UserRound,id:'agent'},{to:'/leaderboard',label:'Contest',icon:Trophy,id:'contest'},{to:'/rewards',label:'Rewards',icon:Coins,id:'rewards'},{to:'/guide',label:'Field Guide',icon:BookOpen,id:'guide'}];
@@ -31,7 +32,7 @@ const Metrics=({world}:{world:World|null})=><div className="world-metrics" data-
  <div className="world-metric"><div className="metric-icon"><Users size={19}/></div><div><span data-testid="metric-agents-label">Agents on shift</span><div><strong data-testid="metric-active-agents">{world?.active_agents??'—'}</strong><small className="green-text" data-testid="metric-shift-status">IN THE MINE</small></div></div></div>
  <div className="world-metric"><div className="metric-icon"><Layers3 size={19}/></div><div><span data-testid="metric-ore-label">Ore collected</span><div><strong data-testid="metric-total-ore">{world?.ore_collected.toLocaleString('en-US')??'—'}</strong><small>ALL TIME</small></div></div></div>
  <div className="world-metric"><div className="metric-icon"><RouteIcon size={19}/></div><div><span data-testid="metric-expeditions-label">Expeditions completed</span><div><strong data-testid="metric-expeditions">{world?.expeditions.toLocaleString('en-US')??'—'}</strong></div></div></div>
- <div className="world-metric"><div className="metric-icon gold"><Coins size={19}/></div><div><span data-testid="metric-reward-label">Holder reward asset<ArrowUpRight size={12}/></span><strong className="metric-unavailable" data-testid="metric-reward-asset">GLDX <small>SOLANA</small></strong></div></div>
+ <DistributionMetric/>
 </div>;
 const Footer=({online}:{online:boolean})=><footer className="site-footer"><div data-testid="footer-copyright"><Pickaxe size={13}/><b>Agent Miner</b><span>Brass Hollow, Solana.</span></div><div data-testid="footer-status"><i className={online?'status-dot':'paused-dot'}/>{online?'World online':'Connecting to the mine'}<span>·</span><Link to="/guide" data-testid="footer-field-guide">Field guide<ArrowUpRight size={11}/></Link></div></footer>;
 function Shell(){

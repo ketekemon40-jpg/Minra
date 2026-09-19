@@ -13,6 +13,8 @@ class RewardInfo(BaseModel):
     platform_url: str
     distribution_mode: str = 'automatic'
     distribution_basis: str = 'eligible_holdings'
+    distribution_scope: str = 'all_holders'
+    total_distributed_gldx: Optional[str] = None
     agent_required: bool = False
     contest_affects_holder_share: bool = False
     token_status: str = 'coming'

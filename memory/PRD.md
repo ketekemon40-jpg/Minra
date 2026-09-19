@@ -2,6 +2,8 @@
 
 ## Current specification — 2026-09-19
 
+**Home metric correction (round 4, 2026-09-19):** User request (verbatim): "Bro 1 lagi sama rewards holder asset di home di section agent on shift, ore collectes dll, itu ubah jadi Distribution, GLDx nya jadi nanti itu akan mencakup total gldx yg udah di distribusi ke seluruh holder via stonk.fun". Implemented: fourth home metric now labeled `Distribution`, displays the cumulative amount in `GLDx` for **all holders via Stonk.fun**, never the connected wallet's receipt total. Public `/api/rewards` metadata has `distribution_scope=all_holders` and `total_distributed_gldx=null` until authentic on-chain data is connected. UI reads this global field and refreshes every60s; unknown/error remains an em dash, not a fabricated zero. Individual rewards dashboard is unchanged. Future indexer must populate this global aggregate from actual finalized distributor receipts with signature deduplication, not game state or mock holdings.
+
 **Latest copy correction (round 3):** Home about is now a brief crypto-style project introduction, NOT a long description of mechanics. This supersedes the earlier request for a longer home explanation. No changes to features, rewards, wallet behavior, or animation.
 
 User request (verbatim): "Edit deskripsi home itu terlalu panjang, dan terlalu jelasin hal gak perlu, yg gue butuh tuh kata kata deskripsi aja buat projek ini apa bukan jelasin semua bro, Seperti about agent miner is Autounmous agent mining bla bla bla gitu paham gak ? Deskripsi about projek yg biasa di pake crypto, itu aja"
