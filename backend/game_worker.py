@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from strategies import preset, step, score
 from strategy_models import GameState
 from contest_logic import ACTION_BUDGET
+from decision_replay import record_decision, replay_indexes
+from pymongo import UpdateOne
 
 LOCKS = defaultdict(asyncio.Lock)
 
@@ -17,9 +19,10 @@ def game_defaults(preference='balanced', preset_key=None):
     config = preset(key)
     return {'engine_version': 2, 'strategy': config, 'strategy_name': config['name'], 'strategy_version': 1,
             'strategy_updated_at': stamp(), 'game': GameState().model_dump(), 'contest': None,
-            'previous_stage': 'basecamp', 'decision_cursor': 0, 'pending_events': []}
+            'previous_stage': 'basecamp', 'decision_cursor': 0, 'pending_events': [], 'pending_replays': []}
 
 async def migrate(db):
+    await replay_indexes(db)
     await db.strategy_history.create_index('id', unique=True)
     await db.contest_archive.create_index('id', unique=True)
     await db.contest_archive.create_index('season_id')
@@ -32,8 +35,14 @@ async def migrate(db):
         await db.agents.update_one({'id': a['id'], 'engine_version': {'$ne': 2}}, {'$set': values})
 
 async def publish_events(db, agent):
-    for event in agent.get('pending_events', []):
-        await db.events.update_one({'id': event['id']}, {'$setOnInsert': event}, upsert=True)
+    for collection, field in [('events', 'pending_events'), ('decision_replays', 'pending_replays')]:
+        records = agent.get(field, [])
+        for offset in range(0, len(records), 500):
+            operations = [UpdateOne({'id': r['id']}, {'$setOnInsert': r}, upsert=True) for r in records[offset:offset+500]]
+            await db[collection].bulk_write(operations, ordered=False)
+    if agent.get('pending_events') or agent.get('pending_replays'):
+        await db.agents.update_one({'id': agent['id'], 'revision': agent['revision']},
+                                  {'$set': {'pending_events': [], 'pending_replays': []}})
 
 async def advance_game(db, original):
     async with LOCKS[original['id']]:
@@ -60,14 +69,17 @@ async def advance_game(db, original):
         game = copy.deepcopy(agent['game'])
         old_mined, old_deliveries = game['mined'], game['deliveries']
         stage, previous_stage = agent['stage'], agent.get('previous_stage', 'basecamp')
-        events = []
+        events, replays = [], []
         for tick in range(cursor + 1, stop + 1):
             ts = agent['started_at'] + tick * 18 - agent['elapsed_before']
             if c and c['status'] == 'active' and ts >= c['ends_at']:
                 c.update(status='closed', completed_at=stamp(c['ends_at']))
             seed = f"brass-hollow-v1:{c['season_id']}" if c and c['status'] == 'active' else 'open-mine-v1'
             previous_stage = stage
+            before = game
+            counted_contest = copy.deepcopy(c) if c and c['status'] == 'active' else None
             game, stage, message = step(agent['strategy'], game, seed)
+            replays.append(record_decision(agent, tick, ts, before, game, stage, message, counted_contest))
             if c and c['status'] == 'active':
                 c['actions_used'] += 1
                 c.update(score=score(game), delivered=game['delivered'], banked_points=game['banked_points'],
@@ -82,9 +94,9 @@ async def advance_game(db, original):
         values = {'game': game, 'contest': c, 'stage': stage, 'previous_stage': previous_stage,
                   'stage_started_at': agent['started_at'] + stop * 18 - agent['elapsed_before'],
                   'step': stop, 'decision_cursor': stop, 'ore': agent['ore'] + game['mined'] - old_mined,
-                  'expeditions': expeditions, 'pending_events': events,
+                  'expeditions': expeditions, 'pending_events': events, 'pending_replays': replays,
                   'discoveries': sorted(set(agent['discoveries']) | {name for threshold, name in [(1,'pyrite'), (3,'quartz'), (6,'azurite')] if expeditions >= threshold})}
         result = await db.agents.update_one({'id': agent['id'], 'revision': agent['revision'], 'status': 'active'},
                                            {'$set': values, '$inc': {'revision': 1}})
         if result.modified_count:
-            await publish_events(db, {**agent, **values})
+            await publish_events(db, {**agent, **values, 'revision': agent['revision'] + 1})

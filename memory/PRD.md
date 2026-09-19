@@ -2,6 +2,8 @@
 
 ## Current specification — 2026-09-19
 
+**Latest user-approved update (round 2) supersedes prior claim/Stock.fun notes:** platform is Stonk.fun, canonical website https://www.stonkfun.xyz. GLDX payouts are external automatic distributions, never an Agent Miner claim operation. Wallet and holder access stay simulated. Reward screen shows empty receipt records with unknown totals until authentic on-chain receipt ingestion is requested. Added immutable decision replay and continuous miner motion; verification below.
+
 This document supersedes source-repository requirements in `REPO_HISTORY.md`. The user owns Digmine and requested continuation, not a redesign. Imported source main commit: `a9a6640ac3a3488ab64176805487c926098587ef` from https://github.com/lasvegasworld18-tech/Digmine.
 
 ## Original problem statement (verbatim)
@@ -28,6 +30,15 @@ Jangan tambahkan kata kata atau edit kata kata yg nenjerumus ke demo, butuh ini 
 - Additional request (verbatim): **Jika sudah selesai build beritahu kekurangan dan kasih solusi nya dan masalah gld robinhood ganti ke Gldx solana di stock.fun**.
 - Conversation is Indonesian. Existing product UI stays English.
 
+### Follow-up request (verbatim)
+Sory bro bukan stock.fun tapi stonk.fun gldx nya
+
+Oke build ini 1 Replay Keputusan: Tambahkan replay keputusan agent agar pemain bisa melihat penyebab skor naik atau turun , 2 konsep claimble gldx itu gak perlu ada pencetan tombol claim karna distribusi itu otomatis dari sistemnya si stonk.fun, dashboard rewards pengguna hanya menunjukan dia sudah menerima brp lewat onchain, 3 tolong lah di bagian depan home di Agent miner kata kata nya kasih deskripsi about yang panjang lah biar org tau konsepnya kaya apa, misal hold agent miner get Gldx, lalu jelasin agent nya sistemnya juga deskripsi diatas itu pake kata kata yang pas dan pro jangan pake pola x y z ngulang ngulang
+
+Choice: **Pertahankan wallet simulasi; tampilkan riwayat kosong tanpa mengarang transaksi sampai pembacaan on-chain disambungkan**.
+
+Additional input (verbatim): **Animasi minging, jangan ada jeda seperti lagging tbtb berenti lalu muncul lagi dengan posisi acak, buatlah benar benar smooth berjalan layaknya bot mining animasi asli tanpa ada jeda diam seperti saat ini**.
+
 ## Personas
 1. Visitor: sees the live public mine, agents, guide, and contest without signing in.
 2. Agent Miner holder: connects a wallet account, creates one agent, configures its strategy, follows persistent progress and enters a season.
@@ -41,12 +52,12 @@ Jangan tambahkan kata kata atau edit kata kata yg nenjerumus ke demo, butuh ini 
 - One agent per wallet identity. Reconnect restores the account. Switching isolates data. Disconnect does not stop an eligible active expedition.
 - Wallet connection and holding are explicitly simulated by user choice, not real Solana proof.
 - GLDX on Solana replaces requested GLD. No invented mint, rewards, fee receipts, or successful financial claim.
-- No in-app demo/test/placeholder language or development-status wall. Project token may say Coming. Unknown amounts are em dashes, and claim stays disabled.
+- No in-app demo/test/placeholder language or development-status wall. Project token may say Coming. Unknown amounts are em dashes. No claim or claimable concept: rewards are automatic external receipts.
 
 ## Architecture decisions
 - React 19 + TypeScript 4.9.5, PixiJS 8.21, React Router, Shadcn/Radix and Sonner. Fonts Exo 2, DM Sans, JetBrains Mono.
 - Preserved source frontend `src` and `public`, and core backend Python modules. Installed source's Pixi/TS dependencies through Yarn without replacing protected environment values. Removed conflicting template jsconfig, retained tsconfig.
-- Routes: `/`, `/agent`, `/strategy`, `/leaderboard`, `/rewards`, `/guide`.
+- Routes: `/`, `/agent`, `/agent/replay`, `/strategy`, `/leaderboard`, `/rewards`, `/guide`.
 - FastAPI under `/api`, MongoDB using existing MONGO_URL/DB_NAME, supervisor-managed services. Source deterministic mining/strategy/contest engine retained.
 - `wallet_auth.py` adds simulated server-owned wallet identities. Provider choices Phantom, Solflare, Backpack are interface simulations, not adapters.
 - Wallet addresses generated from 32 random bytes encoded as Base58, with no Solana keys or signing ability. Recovery capability and bearer tokens are SHA256 hashed in MongoDB, never stored plaintext on server.
@@ -77,21 +88,21 @@ Jangan tambahkan kata kata atau edit kata kata yg nenjerumus ke demo, butuh ini 
 
 ## Known boundaries and solutions
 1. **SIMULATED wallets/holdings**: no real adapter, signed challenge, RPC balance, or on-chain ownership. Keep this mode as requested. Any future real-money phase requires signed nonces, official Agent Miner mint, Token-2022-aware holdings lookup and invalidation/reconciliation. Do not describe the current gate as genuine Solana authentication.
-2. **Stock.fun discrepancy**: live https://stock.fun inspected during build is a congress/insider trade tracking product. Source project previously referenced Stonk.fun / stonkfun.xyz, which is a different platform. GLDX token existence does not verify support or fee integration at either service. Current UI only links Stock.fun, never claims it is a verified launch/fee partner. Before integration obtain the precise intended platform/listing and official fee mechanics.
-3. **GLDX finance not connected**: no claim, fee ingestion, allocation ledger, funded prize or settlement. GLDX confirmed as Gold xStock tracking SPDR Gold Shares via https://www.kraken.com/xstocks/gldx and https://assets.backed.fi/ research. Do not hardcode a candidate mint without issuer verification. Verify Token-2022 properties, eligibility restrictions, funding rules and source records before actual distributions.
+2. **Platform naming resolved by user**: Stonk.fun, not Stock.fun. `https://stonk.fun` failed DNS; canonical `https://www.stonkfun.xyz` verified via its live product and terms. Live listings include GLDX reward pairs (e.g. GP, WOW). Brand Stonk.fun links to the working canonical site. Agent Miner token is still Coming; no Agent Miner-specific listing, mint, distributor, or integration is claimed verified.
+3. **GLDX receipt ingestion intentionally not connected**: no on-chain indexer or actual transaction records. API exposes `chain_connected:false`, totals and timestamps `null`, empty transaction array. The UI never equates the server's mock holding with financial rewards. Future work should verify official GLDX/Agent Miner mints and distributor source, then index finalized incoming reward transfers with idempotent signatures. Do not build a claim service: Stonk.fun administers payouts. StonkFun terms state no guaranteed schedule/amount and apply issuer/jurisdiction restrictions.
 4. **Original hosted DB not in GitHub**: source code/art recovered, not original live accounts and balances. Original progress needs a separately authorized database export/import and explicit wallet-linking migration. No evidence of any previous DB contents was available here.
 5. **Mock recovery browser-bound**: retaining browser recovery data permits reconnect; clearing it loses access. Production recovery must rely on cryptographic wallet proof, not these mock capabilities.
 
 ## Prioritized backlog / next tasks
 ### P0 — before real funds, NOT part of selected simulated scope
-- Resolve Stock.fun vs Stonk.fun and obtain official intended product URL.
+- Platform name and canonical URL resolved; obtain Agent Miner-specific listing/distributor only when real receipt ingestion is requested.
 - Verify Agent Miner and GLDX official mints, issuer terms, network/token program, restrictions and fee routing.
 - Only upon a new user request, replace simulated connection with real wallet-signature ownership and on-chain holder checks; preserve account migration intentionally.
-- Establish separate contest funding and holder allocation ledger before transfers; no invented returns or paid-power mechanic.
+- Keep contest funding separate from Stonk.fun holder distributions; no invented returns, payout controls, or paid-power mechanic.
 - Import original hosted DB only if provided and authorized; never claim source cloning migrated hosted data.
 
 ### P1 — visible follow-up features
-- Agent decision replay with explanation of score changes.
+- Decision replay implemented; next optional extension is side-by-side comparison of runs or strategy versions.
 - Previous-season standings and personal season history.
 - Shareable agent/discovery cards.
 - Wallet re-connect recovery UX for expired capabilities; maintain current simulation boundaries.
@@ -99,8 +110,39 @@ Jangan tambahkan kata kata atau edit kata kata yg nenjerumus ke demo, butuh ini 
 ### P2 — scale and polish
 - Leaderboard pagination / own rank beyond 100; more mine biomes and cosmetic discoveries.
 - Worker leader election and durable distributed rate limiting before multi-instance operation.
-- Profile low-end mobile Pixi rendering if a real-device slowdown is reported.
+- Continuous miner animation implemented and verified. Continue profiling real-device frame pacing if further slowdown is reported.
 
 ## Latest handoff
 Preview: https://miner-hub-10.preview.emergentagent.com
-No keys, signatures, transfers or real token operations requested from user. Report simulated boundaries and Stock.fun discrepancy to the owner, without adding development warnings to the interface.
+No keys, signatures, transfers or real token operations requested from user. Report that wallet/holding are simulated and chain receipt history deliberately empty; platform typo is resolved.
+
+## Implemented — 2026-09-19, round 2
+
+### Decision replay
+- New private read-only `/api/agent/replay`, backed by `decision_replays`; authorization uses existing session-derived wallet owner, never client-supplied identity. Former holders can read their own records.
+- Captures actual executions with stable lifetime sequence, before/after resources, action, rule reason, strategy/version, timestamp, contest/open scope, score transition and component deltas. No guessed reconstruction of earlier unrecorded decisions.
+- Atomic agent-revision update includes pending replay outbox. Bounded bulk upserts keyed by immutable decision ID publish after successful CAS; retries are idempotent; matching revision clears pending records.
+- Pagination newest window with chronological display and exclusive `before` cursor; scope/score-change filters. `limit` 1..200. Index includes owner+agent+sequence; response model removes internal owner and `_id`.
+- New `/agent/replay` with before/after resources, score explanation, play/pause, speed, previous/next/restart, scrubber, filters, earlier pages and refresh. Linked from My Agent tab and telemetry. Empty first-decision history polls every 2s while agent active.
+- Existing strategy and scoring engine unchanged; contest scoring boundaries are marked separately from open expeditions.
+
+### Reward receipt model
+- All claim buttons, claimable balances, projected rewards and manual pool withdrawal concepts removed. `/api/rewards/claim` removed (404).
+- Public `/api/rewards` returns Stonk.fun metadata and automatic distribution mode. `/api/rewards/receipts` returns only authenticated wallet address plus empty/null receipt fields; no holder requirement for this read.
+- Sidebar shows GLDX received; full dashboard shows total received, recorded transfers, last receipt and empty receipt history. Refresh, error/retry, public connect and wallet isolation states implemented.
+- Canonical website verified via crawl, including GLDX paired listings; no external API/financial integration or fake transactions added.
+
+### Home and animation
+- Expanded professional English description above map: holding eligibility, automatic GLDX receipts, autonomous strategy, persistent expeditions, wallet access and contest independence. Existing original map/art/layout retained.
+- Replaced server-clock/index-based position assignment with persistent agent-ID motion state. Updated goals continue from current position; delayed/reordered responses or skewed timestamps never reposition actors.
+- Monotonic `performance.now` frame timing, 50ms delta cap, smooth acceleration/deceleration, cruise48–53 units/s and explicit54-unit/s step ceiling. No large catch-up jump after hidden tab/view pause.
+- Continuous work poses, pickaxe swings, footsteps, cart motion and small local workstation trips rather than frozen sprites. Facing follows travel direction. Names fade on overlap rather than blink off. Removed actors are cleaned from stage.
+- Frame cap60; cached spark/ember geometry avoids per-frame Graphics clearing. Original art uses nearest sprite texture scaling. Reduced-motion respected. Read-only `mine-canvas.minerSnapshot()` exposes render-position telemetry for continuity measurement.
+
+### Round 2 verification and fixes
+- Testing agent report `test_reports/iteration_2.json`, backend suite **15/15 passed**. Reviewed test changes (new replay tests + replacement of obsolete claim assertion with404 and receipts contract).
+- Reported first-replay delay traced to 8s empty-history poll; now2s. Pure UI connect/create Aster/start/navigate replay produced first real record in **20.75s** (18s engine decision + worker/poll delay), with correct +10 depth points and resources.
+- Reported motion sampling peak85.53 units/s: changed to monotonic render clock and explicit per-frame cap with lower cruise. Rechecked **41 seconds**, 275 samples, ten deliberately reordered/time-skewed/delayed world replies: max sampled speed **60.28 units/s**, max render-time speed47.15, max sampled displacement9.15, no missing actors or teleports.
+- Pause freezes exact positions/phases/tool rotations; resume continues. Screenshot overflow lists empty at1920x800 and390x844 for home, mine, receipts, populated replay. Filters and null receipts verified in pure UI flow.
+- `frontend/build-updates-final.log`: **Compiled successfully**, no warnings.
+- All temporary UI QA agents cleaned by exact IDs; existing user agent `Gyat` and12 residents preserved. Cleanup details recorded in `test_reports/round2_followup.md`.

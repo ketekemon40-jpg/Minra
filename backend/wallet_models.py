@@ -33,23 +33,3 @@ class WalletSession(BaseModel):
     wallet: WalletOut
     expires_at: str
 
-
-class RewardOut(BaseModel):
-    status: str = 'coming'
-    asset: str = 'GLDX'
-    network: str = 'Solana'
-    platform: str = 'Stock.fun'
-    platform_url: str
-    platform_verified: bool = False
-    distribution_basis: str = 'pro_rata_holdings'
-    agent_required: bool = False
-    contest_affects_holder_share: bool = False
-    period_hours: Optional[int] = None
-    finances: None = None
-    pool_balance: None = None
-    estimated: None = None
-    claimable: None = None
-    fee_allocation: None = None
-    fee_received: None = None
-    transactions: list = Field(default_factory=list)
-    contracts: dict = Field(default_factory=lambda: {'AGENT_MINER': None, 'GLDX': None, 'vault': None})

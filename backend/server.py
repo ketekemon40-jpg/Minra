@@ -16,7 +16,8 @@ from engine import seed, worker, make_agent, advance, iso
 from game_worker import game_defaults
 from strategy_routes import make_strategy_router
 from wallet_auth import WalletAuth
-from wallet_models import RewardOut
+from decision_replay import make_replay_router
+from rewards import make_rewards_router
 
 load_dotenv(Path(__file__).parent / '.env')
 client = AsyncIOMotorClient(os.environ['MONGO_URL'])
@@ -109,15 +110,8 @@ async def journal(agent_id: Optional[str] = None, limit: int = Query(30, ge=1, l
     events = await db.events.find(query, {'_id': 0}).sort('created_at', -1).limit(limit).to_list(limit)
     return [EventOut(**e) for e in events]
 
-@api.get('/rewards', response_model=RewardOut)
-async def rewards():
-    return RewardOut(platform_url=os.environ['REWARD_PLATFORM_URL'])
-
-@api.post('/rewards/claim')
-async def claim(authorization: Optional[str] = Header(None)):
-    await wallet_auth.owner(authorization, require_holder=False)
-    raise HTTPException(409, 'There is no GLDX allocation to claim.')
-
 app.include_router(api)
 app.include_router(wallet_auth.router)
 app.include_router(make_strategy_router(db, owner))
+app.include_router(make_replay_router(db, wallet_auth))
+app.include_router(make_rewards_router(wallet_auth))

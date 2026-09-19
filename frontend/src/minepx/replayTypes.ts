@@ -1,0 +1,5 @@
+export type ReplayState={energy:number;tool:number;cargo:number;cargo_value:number;depth:number;quality:number;hazard:number;delivered:number;banked_points:number;exploration_points:number;penalties:number;incidents:number};
+export type DecisionReplay={id:string;agent_id:string;sequence:number;created_at:string;action:string;stage:string;reason:string;message:string;strategy_name:string;strategy_version:number;scope:'contest'|'expedition';season_id:string|null;before:ReplayState;after:ReplayState;score_before:number;score_after:number;score_delta:number;banked_delta:number;exploration_delta:number;penalty_delta:number;score_explanation:string};
+export type ReplayPageData={agent_id:string|null;total:number;recorded_total:number;has_more:boolean;next_before:number|null;entries:DecisionReplay[]};
+export const actionNames:Record<string,string>={mine:'Mine the seam',deeper:'Explore deeper',shallower:'Return to shallower ground',survey:'Survey a new vein',return:'Bring the haul home',refine:'Deliver to the refinery',rest:'Recover at basecamp',repair:'Service the tools'};
+export const signed=(n:number)=>n>0?`+${n.toLocaleString('en-US')}`:n.toLocaleString('en-US');

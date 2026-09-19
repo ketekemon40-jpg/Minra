@@ -56,6 +56,7 @@ def cleanup_generated_data(db_client, created_ids):
     yield
     if created_ids["agent_ids"]:
         db_client.events.delete_many({"agent_id": {"$in": created_ids["agent_ids"]}})
+        db_client.decision_replays.delete_many({"agent_id": {"$in": created_ids["agent_ids"]}})
         db_client.strategy_history.delete_many({"agent_id": {"$in": created_ids["agent_ids"]}})
         db_client.contest_archive.delete_many({"agent_id": {"$in": created_ids["agent_ids"]}})
         db_client.agents.delete_many({"id": {"$in": created_ids["agent_ids"]}})
@@ -76,6 +77,20 @@ def create_wallet_and_session(api_client, provider="Phantom"):
     assert connect.status_code == 200
     session = connect.json()
     return wallet, session
+
+
+def wait_for_replays(api_client, headers, timeout_seconds=30):
+    deadline = time.time() + timeout_seconds
+    last = None
+    while time.time() < deadline:
+        response = api_client.get(f"{API_URL}/agent/replay", headers=headers)
+        if response.status_code == 200:
+            payload = response.json()
+            last = payload
+            if payload.get("entries"):
+                return payload
+        time.sleep(2)
+    return last
 
 
 class TestPublicAndWalletAuth:
@@ -384,13 +399,198 @@ class TestStrategyContestRewards:
         assert rewards.status_code == 200
         rewards_data = rewards.json()
         assert rewards_data["asset"] == "GLDX"
-        assert rewards_data["platform"] == "Stock.fun"
-        assert rewards_data["platform_verified"] is False
-        assert rewards_data["claimable"] is None
-        assert rewards_data["pool_balance"] is None
+        assert rewards_data["platform"] == "Stonk.fun"
+        assert rewards_data["platform_url"] == "https://www.stonkfun.xyz"
+        assert rewards_data["distribution_mode"] == "automatic"
+        assert rewards_data["chain_connected"] is False
+
+        public_receipts = api_client.get(f"{API_URL}/rewards/receipts")
+        assert public_receipts.status_code == 401
 
         wallet, session = create_wallet_and_session(api_client, "Solflare")
         created_ids["wallet_ids"].append(wallet["wallet_id"])
+        auth_headers = {"Authorization": f"Bearer {session['token']}"}
+
+        receipts = api_client.get(f"{API_URL}/rewards/receipts", headers=auth_headers)
+        assert receipts.status_code == 200
+        receipt_data = receipts.json()
+        assert receipt_data["wallet_address"] == wallet["address"]
+        assert receipt_data["transactions"] == []
+        assert receipt_data["total_received"] is None
+        assert receipt_data["last_received_at"] is None
+        assert receipt_data["observed_at"] is None
+        assert receipt_data["chain_connected"] is False
+
         claim = api_client.post(f"{API_URL}/rewards/claim", headers={"Authorization": f"Bearer {session['token']}"})
-        assert claim.status_code == 409
-        assert "no GLDX allocation" in claim.json().get("detail", "")
+        assert claim.status_code == 404
+
+
+class TestReplayContractAndPersistence:
+    """Decision replay API, ownership scope, cursor pagination and replay arithmetic validations."""
+
+    def test_replay_requires_valid_bearer_and_no_agent_empty(self, api_client, created_ids):
+        unauth = api_client.get(f"{API_URL}/agent/replay")
+        assert unauth.status_code == 401
+
+        forged = api_client.get(
+            f"{API_URL}/agent/replay", headers={"Authorization": "Bearer source-anon-token"}
+        )
+        assert forged.status_code == 401
+
+        wallet, session = create_wallet_and_session(api_client, "Phantom")
+        created_ids["wallet_ids"].append(wallet["wallet_id"])
+        response = api_client.get(
+            f"{API_URL}/agent/replay", headers={"Authorization": f"Bearer {session['token']}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["agent_id"] is None
+        assert data["entries"] == []
+        assert data["total"] == 0
+
+        wallet2_resp = api_client.post(f"{API_URL}/wallets", json={"provider": "Solflare"})
+        assert wallet2_resp.status_code == 201
+        wallet2 = wallet2_resp.json()
+        created_ids["wallet_ids"].append(wallet2["wallet_id"])
+
+        switched = api_client.post(
+            f"{API_URL}/session",
+            json={"wallet_id": wallet2["wallet_id"], "recovery_capability": wallet2["recovery_capability"]},
+            headers={"Authorization": f"Bearer {session['token']}"},
+        )
+        assert switched.status_code == 200
+
+        revoked = api_client.get(
+            f"{API_URL}/agent/replay", headers={"Authorization": f"Bearer {session['token']}"}
+        )
+        assert revoked.status_code == 401
+
+    def test_replay_records_generate_and_arithmetic_matches(self, api_client, db_client, created_ids):
+        wallet, session = create_wallet_and_session(api_client, "Backpack")
+        created_ids["wallet_ids"].append(wallet["wallet_id"])
+        headers = {"Authorization": f"Bearer {session['token']}"}
+
+        create = api_client.post(
+            f"{API_URL}/agent",
+            headers=headers,
+            json={"name": "ReplayProbe", "avatar": "brass", "preference": "deep", "strategy_preset": "prospector"},
+        )
+        assert create.status_code == 201
+        agent = create.json()
+        created_ids["agent_ids"].append(agent["id"])
+
+        start = api_client.post(f"{API_URL}/agent/action", headers=headers, json={"action": "start"})
+        assert start.status_code == 200
+
+        accelerated_start = time.time() - 280
+        db_client.agents.update_one(
+            {"id": agent["id"]}, {"$set": {"started_at": accelerated_start, "stage_started_at": accelerated_start}}
+        )
+
+        replay = wait_for_replays(api_client, headers, timeout_seconds=35)
+        assert replay is not None
+        entries = replay.get("entries", [])
+        assert len(entries) > 0
+
+        ids = [row["id"] for row in entries]
+        assert len(ids) == len(set(ids))
+
+        for row in entries:
+            assert row["score_after"] - row["score_before"] == row["score_delta"]
+            assert row["after"]["banked_points"] - row["before"]["banked_points"] == row["banked_delta"]
+            assert (
+                row["after"]["exploration_points"] - row["before"]["exploration_points"]
+                == row["exploration_delta"]
+            )
+            assert row["after"]["penalties"] - row["before"]["penalties"] == row["penalty_delta"]
+            assert row["score_after"] >= 0
+
+        pause = api_client.post(f"{API_URL}/agent/action", headers=headers, json={"action": "pause"})
+        assert pause.status_code == 200
+
+    def test_replay_filters_and_before_cursor_no_overlap(self, api_client, created_ids):
+        wallet, session = create_wallet_and_session(api_client, "Solflare")
+        created_ids["wallet_ids"].append(wallet["wallet_id"])
+        headers = {"Authorization": f"Bearer {session['token']}"}
+
+        create = api_client.post(
+            f"{API_URL}/agent",
+            headers=headers,
+            json={"name": "CursorProbe", "avatar": "sage", "preference": "balanced", "strategy_preset": "balanced"},
+        )
+        assert create.status_code == 201
+        created_ids["agent_ids"].append(create.json()["id"])
+
+        assert api_client.post(f"{API_URL}/agent/action", headers=headers, json={"action": "start"}).status_code == 200
+        replay = wait_for_replays(api_client, headers, timeout_seconds=35)
+        assert replay is not None
+        assert replay["entries"]
+
+        first_page = api_client.get(
+            f"{API_URL}/agent/replay?limit=3&scope=all&change=all", headers=headers
+        )
+        assert first_page.status_code == 200
+        first_data = first_page.json()
+        assert len(first_data["entries"]) <= 3
+
+        if first_data["has_more"] and first_data["next_before"]:
+            second_page = api_client.get(
+                f"{API_URL}/agent/replay?limit=3&before={first_data['next_before']}", headers=headers
+            )
+            assert second_page.status_code == 200
+            second_data = second_page.json()
+            first_ids = {r["id"] for r in first_data["entries"]}
+            second_ids = {r["id"] for r in second_data["entries"]}
+            assert first_ids.isdisjoint(second_ids)
+
+        gain = api_client.get(f"{API_URL}/agent/replay?change=gain&limit=5", headers=headers)
+        loss = api_client.get(f"{API_URL}/agent/replay?change=loss&limit=5", headers=headers)
+        steady = api_client.get(f"{API_URL}/agent/replay?change=steady&limit=5", headers=headers)
+        for resp in [gain, loss, steady]:
+            assert resp.status_code == 200
+            assert "total" in resp.json()
+
+        out_of_bounds_limit = api_client.get(f"{API_URL}/agent/replay?limit=201", headers=headers)
+        assert out_of_bounds_limit.status_code == 422
+
+        invalid_scope = api_client.get(f"{API_URL}/agent/replay?scope=bad", headers=headers)
+        assert invalid_scope.status_code == 422
+
+        pause = api_client.post(f"{API_URL}/agent/action", headers=headers, json={"action": "pause"})
+        assert pause.status_code == 200
+
+    def test_replay_read_allowed_after_holder_loss_and_owner_scoped(self, api_client, db_client, created_ids):
+        wallet1, session1 = create_wallet_and_session(api_client, "Phantom")
+        created_ids["wallet_ids"].append(wallet1["wallet_id"])
+        headers1 = {"Authorization": f"Bearer {session1['token']}"}
+
+        create1 = api_client.post(
+            f"{API_URL}/agent",
+            headers=headers1,
+            json={"name": "OwnerOne", "avatar": "copper", "preference": "careful", "strategy_preset": "guardian"},
+        )
+        assert create1.status_code == 201
+        agent1 = create1.json()
+        created_ids["agent_ids"].append(agent1["id"])
+
+        assert api_client.post(f"{API_URL}/agent/action", headers=headers1, json={"action": "start"}).status_code == 200
+        replay1 = wait_for_replays(api_client, headers1, timeout_seconds=35)
+        assert replay1 is not None
+        assert replay1.get("agent_id") == agent1["id"]
+
+        db_client.wallets.update_one({"id": wallet1["wallet_id"]}, {"$set": {"holder_amount": 0}})
+        replay_after_loss = api_client.get(f"{API_URL}/agent/replay", headers=headers1)
+        assert replay_after_loss.status_code == 200
+        assert replay_after_loss.json()["agent_id"] == agent1["id"]
+
+        wallet2, session2 = create_wallet_and_session(api_client, "Solflare")
+        created_ids["wallet_ids"].append(wallet2["wallet_id"])
+        headers2 = {"Authorization": f"Bearer {session2['token']}"}
+        replay2 = api_client.get(f"{API_URL}/agent/replay", headers=headers2)
+        assert replay2.status_code == 200
+        assert replay2.json()["agent_id"] is None
+
+        db_client.wallets.update_one({"id": wallet1["wallet_id"]}, {"$set": {"holder_amount": 1000}})
+
+        pause = api_client.post(f"{API_URL}/agent/action", headers=headers1, json={"action": "pause"})
+        assert pause.status_code in (200, 409)

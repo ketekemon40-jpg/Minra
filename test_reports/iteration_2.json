@@ -1,0 +1,57 @@
+{
+  "summary": "Executed backend+frontend regression for replay, rewards, responsive UI, and animation continuity. Backend contracts passed; frontend mostly passed with one motion-boundary issue under ~100ms sampling.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "MineScene animation",
+        "issue": "Motion speed bound exceeded during 40s continuity sampling at ~100ms cadence (max observed 85.53 px/s; expected <=69 px/s).",
+        "selector": "[data-testid='mine-canvas'].minerSnapshot()",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Replay seeded via UI create/start",
+        "issue": "In one run replay remained empty after 22s despite mining start; deterministic API-seeded run produced replay details correctly.",
+        "affected_selectors": [
+          "[data-testid='replay-empty']",
+          "[data-testid='replay-decision-detail']"
+        ]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_wallet_agent_flows.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Investigate MineScene/MineMotion speed ceiling enforcement for 100ms telemetry sampling; ensure strict <=69 px/s bound in continuity checks.",
+    "Validate replay first-decision visibility timing from pure UI create/start flow (without API priming) to avoid intermittent empty state.",
+    "Keep current rewards contract: no claim actions, /api/rewards/claim 404, receipts empty/null wallet-scoped."
+  ],
+  "critical_code_review_comments": [
+    "Replay API ownership, pagination, filters, invalid bearer handling, and holder-loss read behavior are correct in tested paths.",
+    "Replay record arithmetic is internally consistent: score_delta, banked/exploration/penalty deltas match before/after snapshots; score floor stayed non-negative in observed entries.",
+    "Rewards implementation correctly removed claimable semantics and uses Stonk.fun canonical URL.",
+    "Animation pause-view freeze logic works when measured between two paused snapshots; world-order/server_time perturbation did not cause teleports."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_wallet_agent_flows.py",
+    "/app/test_reports/iteration_2.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "88%"
+  },
+  "seed_data_creation": "Created multiple temporary simulated wallets/agents via /api/wallets + /api/session for replay/rewards/UI validation; test cleanup fixture now also deletes decision_replays by generated agent IDs.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Pytest now covers replay contract + updated rewards contract and passes 15/15. Frontend checks confirmed: long home copy present, no claim UI, rewards overflow absent on 1920x800 and 390x844, replay populated details render on desktop/mobile when replay exists, wallet switch/disconnect clears replay access. Remaining focus: strict motion-speed bound under ~100ms sampling and intermittent replay empty-from-UI-start timing.",
+  "rca of the issue": "Animation speed-bound mismatch appears during high-frequency (~100ms) sampling: observed spikes above 69 px/s though no teleport jumps >20px and perturbation handling is stable. Likely due speed interpolation/state transitions around goal updates or sampling jitter windows; mitigation is to enforce/verify per-frame displacement caps directly in motion update and add in-app diagnostics for frame-delta and per-step displacement.",
+  "mocked_api": "MOCKED: Wallet/session identity and holder gating are simulated. MOCKED: GLDX on-chain receipt ingestion is intentionally disconnected (empty/null receipts by product choice)."
+}
