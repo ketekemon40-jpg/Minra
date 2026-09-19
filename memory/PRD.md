@@ -1,6 +1,16 @@
-# Agent Miner — Product Requirements and Handoff
+# Minera — Product Requirements and Handoff
 
 ## Current specification — 2026-09-19
+
+**Latest branding update (round 5, 2026-09-19): Minera supersedes Agent Miner as the product/token name in all current user-facing copy.** Historical requests and records below retain the old name for provenance only.
+
+User request (verbatim): "Bro untuk nama ubah dari agent miner menjadi Minera, bro keren kan\n\nSama logo nya pake ini aja ya edit biar pas ukurannya model dll jangan asal tempel doang, udah itu aja". User supplied `Screenshot_20260919_233720_Chrome.jpg`: https://customer-assets-39nsmqrw.emergentagent.net/job_miner-hub-10/artifacts/ln3kotus_Screenshot_20260919_233720_Chrome.jpg.
+
+Implemented: Minera name in header wordmark, home title/short about/tagline, footer, wallet/token/holder labels, guide/reward copy, browser/social/mobile metadata and API title/holder error message. Supplied pixel mascot retained, precisely masked to remove screenshot background/rings/decorations without deleting dark boots. Transparent full-body brand PNG uses original proportions; helmet/face crops remain legible at16–64px; centered full-mascot touch icons180/192/512px generated. Header uses38×48px desktop /31×40px mobile with `object-fit:contain`; footer uses22px/19px face mark. Favicon, manifest and touch icon configured. Source image and deterministic asset preparation script retained at `public/assets/branding/minera-original.jpg` and `scripts/prepare_minera_brand.py`.
+
+Scope: identity/copy/assets only, no added features or gameplay/financial changes. Original sessions, agent IDs, DB state, strategy drafts and browser keys `agent-miner-access`, `agent-miner-wallets`, `agent-miner-draft-*` deliberately unchanged to preserve existing accounts/progress. Integration playbook consulted before the sole auth-adjacent edit (403 text only).
+
+Verification: production build compiled successfully (`frontend/build-minera.log`). Desktop1920×800 and mobile390×844 screenshots: clean transparent logo, correct proportions, no overlap/overflow. All seven routes scanned for stale visible brand names (none), wallet dialog still opens, header link returns home, footer mark loads. Only historical/internal namespaces retain the old spelling.
 
 **Home metric correction (round 4, 2026-09-19):** User request (verbatim): "Bro 1 lagi sama rewards holder asset di home di section agent on shift, ore collectes dll, itu ubah jadi Distribution, GLDx nya jadi nanti itu akan mencakup total gldx yg udah di distribusi ke seluruh holder via stonk.fun". Implemented: fourth home metric now labeled `Distribution`, displays the cumulative amount in `GLDx` for **all holders via Stonk.fun**, never the connected wallet's receipt total. Public `/api/rewards` metadata has `distribution_scope=all_holders` and `total_distributed_gldx=null` until authentic on-chain data is connected. UI reads this global field and refreshes every60s; unknown/error remains an em dash, not a fabricated zero. Individual rewards dashboard is unchanged. Future indexer must populate this global aggregate from actual finalized distributor receipts with signature deduplication, not game state or mock holdings.
 

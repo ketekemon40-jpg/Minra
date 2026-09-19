@@ -21,12 +21,13 @@ import ContestPage from './ContestPage';
 import ReplayPage from './ReplayPage';
 import {HomeAbout} from './HomeAbout';
 import {DistributionMetric} from './DistributionMetric';
+import {BrandMark,BrandWordmark} from './Brand';
 import './Strategy.css';
 import './Wallet.css';
 const nav=[{to:'/',label:'The Mine',icon:Compass,id:'mine'},{to:'/agent',label:'My Agent',icon:UserRound,id:'agent'},{to:'/leaderboard',label:'Contest',icon:Trophy,id:'contest'},{to:'/rewards',label:'Rewards',icon:Coins,id:'rewards'},{to:'/guide',label:'Field Guide',icon:BookOpen,id:'guide'}];
 const Header=({onWallet}:{onWallet:()=>void})=>{
  const {pathname}=useLocation(),{wallet,loading}=useWallet();
- return <header className="site-header"><div className="header-inner"><Link to="/" className="brand" data-testid="brand-home" aria-label="Agent Miner home"><span className="brand-icon"><Pickaxe size={22}/><i/></span>Agent<span>Miner</span><small>AUTONOMOUS MINING</small></Link><nav aria-label="Main navigation">{nav.map(n=><NavLink className={({isActive})=>isActive||(n.id==='agent'&&pathname==='/strategy')?'active':''} key={n.id} to={n.to} end={n.to==='/'} data-testid={`nav-${n.id}`}><n.icon size={16}/>{n.label}</NavLink>)}</nav><div className="header-actions"><span className="chain-label" data-testid="chain-label"><Layers3 size={16}/>Solana</span><Button disabled={loading} data-testid="connect-wallet-button" className="wallet-button" onClick={onWallet}><Wallet size={15}/><span>{loading?'Connecting…':wallet?shortAddress(wallet.address):'Connect wallet'}</span></Button></div></div></header>;
+ return <header className="site-header"><div className="header-inner"><Link to="/" className="brand minera-brand" data-testid="brand-home" aria-label="Minera home"><BrandMark placement="header"/><BrandWordmark/></Link><nav aria-label="Main navigation">{nav.map(n=><NavLink className={({isActive})=>isActive||(n.id==='agent'&&pathname==='/strategy')?'active':''} key={n.id} to={n.to} end={n.to==='/'} data-testid={`nav-${n.id}`}><n.icon size={16}/>{n.label}</NavLink>)}</nav><div className="header-actions"><span className="chain-label" data-testid="chain-label"><Layers3 size={16}/>Solana</span><Button disabled={loading} data-testid="connect-wallet-button" className="wallet-button" onClick={onWallet}><Wallet size={15}/><span>{loading?'Connecting…':wallet?shortAddress(wallet.address):'Connect wallet'}</span></Button></div></div></header>;
 };
 const Metrics=({world}:{world:World|null})=><div className="world-metrics" data-testid="world-metrics">
  <div className="world-metric"><div className="metric-icon"><Users size={19}/></div><div><span data-testid="metric-agents-label">Agents on shift</span><div><strong data-testid="metric-active-agents">{world?.active_agents??'—'}</strong><small className="green-text" data-testid="metric-shift-status">IN THE MINE</small></div></div></div>
@@ -34,7 +35,7 @@ const Metrics=({world}:{world:World|null})=><div className="world-metrics" data-
  <div className="world-metric"><div className="metric-icon"><RouteIcon size={19}/></div><div><span data-testid="metric-expeditions-label">Expeditions completed</span><div><strong data-testid="metric-expeditions">{world?.expeditions.toLocaleString('en-US')??'—'}</strong></div></div></div>
  <DistributionMetric/>
 </div>;
-const Footer=({online}:{online:boolean})=><footer className="site-footer"><div data-testid="footer-copyright"><Pickaxe size={13}/><b>Agent Miner</b><span>Brass Hollow, Solana.</span></div><div data-testid="footer-status"><i className={online?'status-dot':'paused-dot'}/>{online?'World online':'Connecting to the mine'}<span>·</span><Link to="/guide" data-testid="footer-field-guide">Field guide<ArrowUpRight size={11}/></Link></div></footer>;
+const Footer=({online}:{online:boolean})=><footer className="site-footer"><div data-testid="footer-copyright"><BrandMark placement="footer"/><b>Minera</b><span>Brass Hollow, Solana.</span></div><div data-testid="footer-status"><i className={online?'status-dot':'paused-dot'}/>{online?'World online':'Connecting to the mine'}<span>·</span><Link to="/guide" data-testid="footer-field-guide">Field guide<ArrowUpRight size={11}/></Link></div></footer>;
 function Shell(){
  const identity=useWallet();
  const {world,agent,events,error,refresh,setAgent,loadedAccount}=useMine(identity.wallet?.wallet_id);

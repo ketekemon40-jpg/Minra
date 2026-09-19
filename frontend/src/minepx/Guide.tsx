@@ -5,15 +5,15 @@ const catalog=[{id:'pyrite',name:'Pyrite cluster',kind:'THE FIRST GLINT',color:'
 export const Collection=({agent}:{agent:Agent|null})=><div className="collection-grid">{catalog.map(c=>{const unlocked=agent?.discoveries.includes(c.id);return <article className={`collection-item ${unlocked?'unlocked':''}`} key={c.id} data-testid={`collection-${c.id}`}><div className="crystal-art" style={{'--crystal-color':c.color} as React.CSSProperties}><i/><i/><i/><i/><i/></div><span className="eyebrow">{c.kind}</span><h3 data-testid={`collection-name-${c.id}`}>{c.name}</h3><p data-testid={`collection-description-${c.id}`}>{c.description}</p><span className="collection-unlock" data-testid={`collection-status-${c.id}`}>{unlocked?<Check size={12}/>:<LockKeyhole size={12}/>} {unlocked?'Discovered':`${c.cycles} completed expedition${c.cycles>1?'s':''}`}</span></article>;})}</div>;
 const faqs=[
  ['Does my agent keep working when I leave?','Yes. Active agents continue their expeditions after you close the browser or disconnect. Progress belongs to your wallet account. An agent pauses if its holder access ends.'],
- ['Do mining scores increase my GLDX share?','No. Holder allocations are proportional to eligible Agent Miner holdings. Contest scores never change that share.'],
+ ['Do mining scores increase my GLDX share?','No. Holder allocations are proportional to eligible Minera holdings. Contest scores never change that share.'],
  ['How do strategy rules work?','Rules run from top to bottom. The first matching rule determines the next action. ALL and ANY groups combine conditions. Critical energy or equipment limits take priority over your custom rules.'],
  ['What changes my contest score?','Delivered ore adds its game value. Each new depth adds 10 points, up to 40 per run. Setbacks deduct 25 points. Undelivered cargo earns nothing. Each entry receives 600 decisions.'],
  ['Can I edit a strategy during a contest?','Yes. Saved changes affect future decisions without resetting your score or resources. The workbench evaluates a draft separately from your active expedition.'],
- ['Who can enter a contest?','Agent Miner holders with a wallet-owned agent. Each wallet receives one entry per season. Autonomous resident agents stay outside the leaderboard.'],
+ ['Who can enter a contest?','Minera holders with a wallet-owned agent. Each wallet receives one entry per season. Autonomous resident agents stay outside the leaderboard.'],
  ['Do I need a wallet to visit?','The mine and standings are public. Connecting a wallet with holder access unlocks your agent and its strategy. Your agent remains linked to that wallet when you return.'],
  ['What is GLDX?','GLDX is Gold xStock on Solana, a tokenized tracker of SPDR Gold Shares. It does not represent direct ownership of physical gold or ETF shares. Issuer and jurisdiction restrictions apply.'],
  ['Are contest prizes part of holder rewards?','No. Contest prizes use a separate project or sponsor pool. Holder allocations are reserved for holders.'],
- ['Is staking required?','No. Agent Miner uses holder access without locking tokens. Holding more does not buy a mining advantage.'],
+ ['Is staking required?','No. Minera uses holder access without locking tokens. Holding more does not buy a mining advantage.'],
 ];
 export default function Guide({agent}:{agent:Agent|null}){
  const [open,setOpen]=useState<number|null>(0);

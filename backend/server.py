@@ -37,7 +37,7 @@ async def lifespan(app):
         await task
     client.close()
 
-app = FastAPI(title='Agent Miner', lifespan=lifespan)
+app = FastAPI(title='Minera', lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=os.environ['CORS_ORIGINS'].split(','),
                    allow_credentials=False, allow_methods=['GET', 'POST'], allow_headers=['Authorization', 'Content-Type'])
 api = APIRouter(prefix='/api')

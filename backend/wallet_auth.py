@@ -79,7 +79,7 @@ class WalletAuth:
     async def owner(self, authorization, require_holder=True):
         _, wallet = await self.current(authorization)
         if require_holder and wallet['holder_amount'] <= 0:
-            raise HTTPException(403, 'Agent Miner holdings are required to play.')
+            raise HTTPException(403, 'Minera holdings are required to play.')
         return wallet['id']
 
     def register_routes(self):

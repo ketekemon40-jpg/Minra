@@ -14,9 +14,9 @@ export const WalletDialog=({open,onClose}:{open:boolean;onClose:()=>void})=>{
  return <Dialog open={open} onOpenChange={v=>{if(!v&&!busy)onClose();}}><DialogContent className="mine-dialog wallet-dialog" data-testid="wallet-dialog">
   <div className="dialog-emblem"><Wallet size={25}/></div>
   <DialogTitle data-testid="wallet-dialog-title">{wallet?'Your wallet':'Connect wallet'}</DialogTitle>
-  <DialogDescription data-testid="wallet-dialog-description">{wallet?'Your Agent Miner account on Solana.':'Your agent belongs to your wallet.'}</DialogDescription>
+  <DialogDescription data-testid="wallet-dialog-description">{wallet?'Your Minera account on Solana.':'Your agent belongs to your wallet.'}</DialogDescription>
   {wallet&&<><div className="connected-wallet" data-testid="wallet-connected-account"><span data-testid="wallet-provider">{wallet.provider}</span><strong data-testid="wallet-address">{wallet.address}</strong><button data-testid="copy-wallet-address" title="Copy address" aria-label="Copy address" onClick={async()=>{try{await navigator.clipboard.writeText(wallet.address);toast.success('Address copied.');}catch{toast.error('Unable to copy address.');}}}><Copy size={15}/></button></div>
-   <dl className="wallet-checks"><div data-testid="wallet-network-status"><dt>Network</dt><dd>Solana</dd></div><div data-testid="wallet-token-status"><dt>Agent Miner token</dt><dd>Coming</dd></div><div data-testid="wallet-eligibility"><dt>Holder access</dt><dd className={wallet.eligible?'green-text':''}>{wallet.eligible?'Enabled':'Hold Agent Miner to play'}</dd></div></dl>
+   <dl className="wallet-checks"><div data-testid="wallet-network-status"><dt>Network</dt><dd>Solana</dd></div><div data-testid="wallet-token-status"><dt>Minera token</dt><dd>Coming</dd></div><div data-testid="wallet-eligibility"><dt>Holder access</dt><dd className={wallet.eligible?'green-text':''}>{wallet.eligible?'Enabled':'Hold Minera to play'}</dd></div></dl>
   </>}
   <div className="wallet-providers" data-testid="wallet-provider-list">{providers.map((provider,i)=>{
    const existing=saved.find(w=>w.provider===provider),active=wallet?.provider===provider;
